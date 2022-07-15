@@ -8,6 +8,8 @@ local KnitPackages = Packages.KnitPackages
 local Server = script:FindFirstAncestor("Server")
 local Services = Server.Services
 
+local BasicState = require(Packages.BasicState)
+
 local Knit = require(KnitPackages.Knit)
 local Promise = require(Knit.Util.Promise)
 
@@ -15,14 +17,14 @@ local PlayerDataService = Knit.CreateService {
     Name = "PlayerDataService",
     PlayerData = {},
     Client = {
-        MyDataLoaded = Knit.CreateSignal()
+        MyDataChanged = Knit.CreateSignal(),
     }
 }
 
 function PlayerDataService.Client:GetPlayerData(player)
     self.Server:WaitForPlayerData(player):await()
 
-    return self.Server:GetPlayerData(player)
+    return self.Server:GetPlayerData(player):GetState()
 end
 
 function PlayerDataService:WaitForPlayerData(player)
@@ -42,18 +44,26 @@ function PlayerDataService:GetPlayerData(player)
 end
 
 function PlayerDataService:KnitStart()
-    game.Players.PlayerAdded:Connect(function(player)
-        self.PlayerData[player] = {
-            Muny = 0
-        }
-        --[[
-        self.PlayerData[player] = {
-            Muny = 0
-        }
-        ]]--
+    self.playerDataStateChangedConnections = {}
 
-        --self.Client.MyDataLoaded:Fire(player, self.PlayerData[player])
+    game.Players.PlayerAdded:Connect(function(player)
+        self.PlayerData[player] = BasicState.new {
+            Muny = 15
+        }
+
+        self.playerDataStateChangedConnections[player] = self.PlayerData[player].Changed:Connect(function(oldState, newKey)
+            self.Client.MyDataChanged:Fire(player, newKey, self.PlayerData[player]:Get(newKey))
+        end)
     end)
+
+    game.Players.PlayerRemoving:Connect(function(player)
+        self.playerDataStateChangedConnections[player]:Disconnect()
+        self.playerDataStateChangedConnections[player] = nil
+    end)
+end
+
+function PlayerDataService:GivePlayerMuny(player, amount)
+    self.PlayerData[player]:Set("Muny", self.PlayerData[player]:Get("Muny") + amount)
 end
 
 return PlayerDataService

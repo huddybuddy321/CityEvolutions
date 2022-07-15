@@ -12,7 +12,6 @@ local Controllers = Client.Controllers
 
 local Components = Client.Components
 local Building = require(Components.Building)
-local Gon = require(Components.Gon)
 
 local BasicState = require(Packages.BasicState)
 
@@ -23,7 +22,7 @@ local Mouse = Input.Mouse.new()
 local PlayerDataController = Knit.CreateController {
     Name = "PlayerDataController",
     State = BasicState.new {
-        Muny = "l"
+        Muny = 0
     }
 }
 
@@ -32,16 +31,11 @@ function PlayerDataController:KnitStart()
 
     PlayerDataService:GetPlayerData():andThen(function(playerData)
         self.State:SetState(playerData)
-        print(self.State:GetState())
     end)
 
-    --[[
-
-    PlayerDataService.MyDataLoaded:Connect(function(playerData)
-        self.State:SetState(playerData)
-        print(self.State:GetState())
+    PlayerDataService.MyDataChanged:Connect(function(key, value)
+        self.State:Set(key, value)
     end)
-    ]]--
 end
 
 function PlayerDataController:Get(key)

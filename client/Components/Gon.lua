@@ -34,6 +34,7 @@ local Gon = Component.new({
 })
 
 function Gon:Construct()
+    Knit.OnStart():await()
     if not CitizenSelectorController then
         GonSelectorController = Knit.GetController("GonSelectorController")
         CitizenSelectorController = Knit.GetController("CitizenSelectorController")
@@ -107,7 +108,11 @@ end
 function Gon:Click()
     self.ClickToBuild.Enabled = false
     if CitizenSelectorController.selectedCitizenComponent then
-        CitizenService:AssignCitizenBuilding(CitizenSelectorController.selectedCitizenComponent.Instance, self.Instance)
+        CitizenService:AssignCitizenGon(CitizenSelectorController.selectedCitizenComponent.Instance, self.Instance):andThen(function(citizenWasAssigned)
+            if citizenWasAssigned then
+                CitizenSelectorController.CitizenAssignedToGon:Fire(CitizenSelectorController.selectedCitizenComponent.Instance)
+            end
+        end)
     end
 end
 

@@ -15,35 +15,14 @@ local BasicState = require(Packages.BasicState)
 local Knit = require(KnitPackages.Knit)
 local Component = require(Knit.Util.Component)
 local Signal = require(Knit.Util.Signal)
-local Timer = require(Knit.Util.Timer)
 
-local Components = Server.Components
-local Building = require(Components.Building)
-
-local Hut = Component.new({
-    Tag = "BuildingHut",
+local Gon = Component.new({
+    Tag = "Gon",
     Ancestors = {workspace},
 })
 
-function Hut:Construct()
-    Building:WaitForInstance(self.Instance):andThen(function(buildingComponent)
-        self.Building = buildingComponent
-    end)
-
-    self.Building.SharedState:Set("Capacity", 3)
-    --self.Building
-    self.Timer = Timer.new(2)
+function Gon:SetBuilding(buildingComponent)
+    self.Building = buildingComponent
 end
 
-function Hut:Start()
-    self.Timer.Tick:Connect(function()
-        self:Tick()
-    end)
-
-    self.Timer:Start()
-end
-
-function Hut:Tick()
-end
-
-return Hut
+return Gon

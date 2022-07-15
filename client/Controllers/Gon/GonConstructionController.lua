@@ -2,7 +2,6 @@ local SoundService = game:GetService("SoundService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Assets = ReplicatedStorage.Assets
-local Gon = Assets.Gon
 
 local Packages = ReplicatedStorage.Packages
 local KnitPackages = Packages.KnitPackages
@@ -11,7 +10,6 @@ local Client = script:FindFirstAncestor("Client")
 local Controllers = Client.Controllers
 
 local Components = Client.Components
-local Building = require(Components.Building)
 local Gon = require(Components.Gon)
 
 local Knit = require(KnitPackages.Knit)
@@ -24,6 +22,7 @@ local GonReplicationController = Knit.CreateController {
 
 function GonReplicationController:KnitStart()
     local BuildingService = Knit.GetService("BuildingService")
+
     BuildingService.ConstructOnGon:Connect(function(gonInstance, constructionTime)
         local gonComponent = Gon:FromInstance(gonInstance)
         if gonComponent then

@@ -22,6 +22,7 @@ local PanelButton = Component.new({
 })
 
 function PanelButton:Construct()
+    Knit.OnStart():await()
     self.Panel = self.Instance:FindFirstAncestor("ScreenGui"):WaitForChild("Panels"):WaitForChild(self.Instance:GetAttribute("Panel"))
     self.State = BasicState.new {
         Active = true,

@@ -22,6 +22,7 @@ local Signal = require(Knit.Util.Signal)
 local Timer = require(Knit.Util.Timer)
 
 local Components = Server.Components
+local Building = require(Components.Building)
 --local Hammer = require(Components.Hammer)
 
 local BerryBush = Component.new({
@@ -30,11 +31,19 @@ local BerryBush = Component.new({
 })
 
 function BerryBush:Construct()
-    --self.Building
-    self.Timer = Timer.new(2)
+    Building:WaitForInstance(self.Instance):andThen(function(buildingComponent)
+        self.Building = buildingComponent
+    end)
+
+    self.Building.SharedState:Set("Capacity", 2)
+
+    self.tickInterveral = 2
 
     self.Burries = {}
     self.BurriesTaken = {}
+    self.CitizenTimers = {}
+    self.citizenTimerTickConnections = {}
+
     for _, berry in pairs(self.Instance:GetChildren()) do
         if berry.Name == "Berry" then
             table.insert(self.Burries, berry)
@@ -43,15 +52,21 @@ function BerryBush:Construct()
 end
 
 function BerryBush:Start()
-    self.Timer.Tick:Connect(function()
-        self:Tick()
-    end)
+    --Every time a citizen is added to this building, create a new timer
+    self.Building.CitizenAdded:Connect(function(citizenIndex)
+        local timer = Timer.new(self.tickInterveral)
+        self.citizenTimerTickConnections[citizenIndex] = timer.Tick:Connect(function()
+            self:Tick()
+        end)
+        self.CitizenTimers[citizenIndex] = timer
 
-    self.Timer:Start()
+        timer:Start()
+    end)
 end
 
 function BerryBush:Tick()
     if #self.BurriesTaken == #self.Burries then
+        --Reset berries and make all of them visible
         table.clear(self.BurriesTaken)
 
         for _, berry in pairs(self.Burries) do
@@ -73,6 +88,9 @@ function BerryBush:Tick()
                     berryPickedParticleEmitter:Emit(1)
 
                     self.Instance.Base.BerryPicked:Play()
+
+                    --Give cash
+                    Knit.GetService("PlayerDataService"):GivePlayerMuny(self.Building.State:Get("Owner"), 1)
 
                     task.wait(0.3)
                     TweenService:Create(berry, TweenInfo.new(0.3), {Transparency = 1}):Play()

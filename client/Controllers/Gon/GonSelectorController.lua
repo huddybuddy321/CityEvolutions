@@ -1,5 +1,6 @@
 local RunService = game:GetService("RunService")
 local ContextActionService = game:GetService("ContextActionService")
+local SoundService = game:GetService("SoundService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Assets = ReplicatedStorage.Assets
@@ -25,6 +26,7 @@ local GonSelectorController = Knit.CreateController {
 
 function GonSelectorController:KnitStart()
     local BuildingService = Knit.GetService("BuildingService")
+    local GameMessageController = Knit.GetController("GameMessageController")
 
     local PlotController = Knit.GetController("PlotController")
     PlotController:PlotSelected():andThen(function(localPlot)
@@ -70,43 +72,34 @@ function GonSelectorController:KnitStart()
             end
         end)
 
-        ContextActionService:BindAction("BuildOnGon", function(actionName, inputState)
-            if inputState == Enum.UserInputState.End then
-                local raycastResult = Mouse:Raycast(raycastParams, 60)
+        Knit.GetController("InputController").Clicked:Connect(function()
+            local raycastResult = Mouse:Raycast(raycastParams, 60)
 
-                if raycastResult then
-                    --if raycastResult.Instance:FindFirstAncestor("Plots") then
-                        for gonIndex, gon in pairs(localPlot.Gons) do
-                            if gon == raycastResult.Instance then
-                                local gonComponent = Gon:FromInstance(gon)
+            if raycastResult then
+                --if raycastResult.Instance:FindFirstAncestor("Plots") then
+                    for gonIndex, gon in pairs(localPlot.Gons) do
+                        if gon == raycastResult.Instance then
+                            local gonComponent = Gon:FromInstance(gon)
 
-                                if gonComponent then
-                                    gonComponent:Click()
-                                end
-            
-                                if gonComponent and not gonComponent.State:Get("HasBuildingComponent") then
-                                    gonComponent.State:Set("Constructing", BuildingService:Build(gonComponent.Instance))
-                                end
+                            if gonComponent then
+                                gonComponent:Click()
+                            end
+
+                            if gonComponent and not gonComponent.State:Get("HasBuildingComponent") then
+                                BuildingService:Build(gonComponent.Instance):andThen(function(willConstruct)
+                                    if not willConstruct then
+                                        SoundService:PlayLocalSound(SoundService.Interface.Error)
+                                        GameMessageController:GameMessage("You're too poor to build...")
+                                    else
+                                        gonComponent.State:Set("Constructing", willConstruct)
+                                    end
+                                end)
                             end
                         end
-                    --end
-                end
-                --[[
-                print("Clicked")
-                if self.selectedGonInstance then
-                    local gonComponent = Gon:FromInstance(self.selectedGonInstance)
-
-                    if gonComponent then
-                        gonComponent:Click()
                     end
-
-                    if gonComponent and not gonComponent.State:Get("HasBuildingComponent") then
-                        BuildingService.BuildBuilding:Fire(gonComponent.Instance, "Housing1")
-                    end
-                end
-                ]]--
+                --end
             end
-        end, false, Enum.UserInputType.MouseButton1, Enum.UserInputType.Touch)
+        end)
     end)
 end
 

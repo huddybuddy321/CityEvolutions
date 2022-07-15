@@ -27,6 +27,7 @@ local Hammer = Component.new({
 })
 
 function Hammer:Construct()
+    Knit.OnStart():await()
     self.State = BasicState.new {
         Direction = "Rise",
     }

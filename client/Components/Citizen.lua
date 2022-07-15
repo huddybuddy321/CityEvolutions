@@ -19,17 +19,34 @@ local Knit = require(KnitPackages.Knit)
 local Component = require(Knit.Util.Component)
 local Signal = require(Knit.Util.Signal)
 
+local CitizenReplicationController
+
 local Citizen = Component.new({
     Tag = "Citizen",
     Ancestors = {workspace},
 })
 
 function Citizen:Construct()
+    Knit.OnStart():await()
+    if not CitizenReplicationController then
+        CitizenReplicationController = Knit.GetController("CitizenReplicationController")
+    end
 end
 
 function Citizen:Start()
-    self.citizenWalk = self.Instance:WaitForChild("Humanoid"):LoadAnimation(Animations.CitizenWalk)
-    self.citizenWalk:Play()
+    self.citizenWalkAnimation = self.Instance:WaitForChild("Humanoid"):LoadAnimation(Animations.CitizenWalk)
+    self.citizenWalkAnimation:Play()
+
+    self.citizenReachedGonConnection = CitizenReplicationController.CitizenReachedGon:Connect(function(citizenInstance)
+        if self.Instance == citizenInstance then
+            self:ReachedGon()
+        end
+    end)
+end
+
+function Citizen:ReachedGon()
+    self.citizenReachedGonConnection:Disconnect()
+    self.citizenWalkAnimation:Stop()
 end
 
 return Citizen
