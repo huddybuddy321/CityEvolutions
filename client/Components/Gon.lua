@@ -1,5 +1,6 @@
 local Player = game.Players.LocalPlayer
 
+local Debris = game:GetService("Debris")
 local TweenService = game:GetService("TweenService")
 local SoundService = game:GetService("SoundService")
 local CollectionService = game:GetService("CollectionService")
@@ -164,6 +165,17 @@ function Gon:ConstructionComplete()
         self.TimeToBuild.Enabled = false
     end
     SoundService:PlayLocalSound(self.Instance:WaitForChild("ConstructionComplete"))
+
+    task.spawn(function()
+        self.State:GetChangedSignal("HasBuildingComponent"):wait()
+
+        local constructionCompleteParticles = Assets.Particles.ConstructionComplete:Clone()
+        constructionCompleteParticles.Parent = self.BuildingComponent.Instance.PrimaryPart
+
+        constructionCompleteParticles:Emit(5)
+
+        Debris:AddItem(constructionCompleteParticles, 1)
+    end)
 end
 
 return Gon

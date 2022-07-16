@@ -25,7 +25,7 @@ local CitizenSpawnService = Knit.CreateService {
 }
 
 function CitizenSpawnService:SpawnCitizenWave(citizenWaveCount)
-    print("Spawning " .. citizenWaveCount .. " citizens.")
+    print("Spawning " .. citizenWaveCount .. " citizens")
 
     for _ = 1, citizenWaveCount do
         local citizenCount = #(workspace.CitizenZone.Citizens:GetChildren())
