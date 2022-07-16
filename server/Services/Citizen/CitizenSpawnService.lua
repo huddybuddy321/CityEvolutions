@@ -48,6 +48,8 @@ function CitizenSpawnService:KnitStart()
     self.citizenSpawnTimer = Timer.new(self.SpawnInterveral)
 
     self.citizenSpawnTimer.Tick:Connect(function()
+        local citizenCount = #(workspace.CitizenZone.Citizens:GetChildren())
+
         if citizenCount <= 30 then
             self:SpawnCitizenWave(self.CitizenWaveCount)
         end
