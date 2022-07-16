@@ -35,7 +35,13 @@ function BerryBush:Construct()
         self.Building = buildingComponent
     end)
 
-    self.Building.SharedState:Set("Capacity", 2)
+    --self.Building.SharedState:Set("Capacity", 2)
+    self.Building.SharedState:SetState({
+        Capacity = 2,
+        Details = {
+            "1" .. " muny per berry"
+        }
+    })
 
     self.tickInterveral = 2
 

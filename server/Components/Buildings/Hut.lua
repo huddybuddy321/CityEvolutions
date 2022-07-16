@@ -30,7 +30,12 @@ function Hut:Construct()
         self.Building = buildingComponent
     end)
 
-    self.Building.SharedState:Set("Capacity", 3)
+    self.Building.SharedState:SetState({
+        Capacity = 3,
+        Details = {
+            tostring(#self.Building.SharedState:Get("Citizens")*1) .. " muny per 2 seconds"
+        }
+    })
     --self.Building
     self.Timer = Timer.new(2)
 end
@@ -40,10 +45,17 @@ function Hut:Start()
         self:Tick()
     end)
 
+    self.Building.SharedState:GetChangedSignal("Citizens"):Connect(function(citizens)
+        self.Building.SharedState:Set("Details", {
+            tostring(#self.Building.SharedState:Get("Citizens")*1) .. " muny per 2 seconds"
+        })
+    end)
+
     self.Timer:Start()
 end
 
 function Hut:Tick()
+    Knit.GetService("PlayerDataService"):GivePlayerMuny(self.Building.State:Get("Owner"), 1*(#self.Building.SharedState:Get("Citizens")))
 end
 
 return Hut

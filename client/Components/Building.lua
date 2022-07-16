@@ -38,6 +38,7 @@ function Building:Construct()
     self.GotSharedState, self.SharedState = RemoteState.WaitForState(self.Instance):await()
 
     self:SetCapacity(self.SharedState:Get("Capacity"))
+    self:UpdateDetails(self.SharedState:Get("Details"))
 
     self.State:Set("Owner", self.State.None)
 end
@@ -64,7 +65,38 @@ function Building:Start()
         self:SetCapacity(capacity)
     end)
 
+    self.SharedState:GetChangedSignal("Details"):Connect(function(details)
+        self:UpdateDetails(details)
+    end)
+
     self.State:Set("Title", self.Instance.Name)
+end
+
+function Building:UpdateDetails(details)
+    for _, detail in pairs(self.detailsGui:WaitForChild("Frame"):WaitForChild("Details"):GetChildren()) do
+        if detail.Name == "Detail" then
+            detail:Destroy()
+        end
+    end
+
+    for _, detail in pairs(details) do
+        local detailLabel = Instance.new("TextLabel")
+        detailLabel.Name = "Detail"
+        detailLabel.Size = UDim2.fromScale(0.8, 0.25)
+        detailLabel.BackgroundTransparency = 1
+        detailLabel.Font = Enum.Font.GothamBold
+        detailLabel.Text = detail
+        detailLabel.TextColor3 = Color3.fromRGB(176, 255, 28)
+        detailLabel.TextScaled = true
+        detailLabel.LayoutOrder = 3
+
+        local UIStroke = Instance.new("UIStroke")
+        UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+        UIStroke.Color = Color3.fromRGB(132, 132, 132)
+        UIStroke.Parent = detailLabel
+
+        detailLabel.Parent = self.detailsGui:WaitForChild("Frame"):WaitForChild("Details")
+    end
 end
 
 function Building:SetCapacity(capacity)

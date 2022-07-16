@@ -38,7 +38,8 @@ function Building:Construct()
     self.SharedState = RemoteState.new(self.Instance, {
         Citizens = {},
         Capacity = 5,
-        Owner = RemoteState.None
+        Owner = RemoteState.None,
+        Details = {}
     })
 
     self.CitizenAdded = Signal.new()
