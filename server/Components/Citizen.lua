@@ -43,40 +43,39 @@ function Citizen:Construct()
     end
 
     self.SharedState = RemoteState.new(self.Instance, {
-        TargetState = "Random"
+       GonAssignedTo = RemoteState.None,
+       Dragging = false
     })
 end
 
-function Citizen:SetPlayerTarget(player)
-    self.moveToPoint = nil
-    self.moveToPlayer = player
+function Citizen:Start()
+    local CitizenMoveZone = workspace.CitizenZone.CitizenMoveZone
 
-    self.SharedState:Set("TargetState", "Player")
-end
+    self.heartbeatConnection = game:GetService("RunService").Heartbeat:Connect(function()
+        if not self.SharedState:Get("Dragging") then
+            if not self.moveToPoint then
+                self.moveToPoint = Vector3.new(
+                    math.random(CitizenMoveZone.Position.X - (CitizenMoveZone.Size.X/2), CitizenMoveZone.Position.X + (CitizenMoveZone.Size.X/2)),
+                    0.5,
+                    math.random(CitizenMoveZone.Position.Z - (CitizenMoveZone.Size.Z/2), CitizenMoveZone.Position.Z + (CitizenMoveZone.Size.Z/2))
+                )
+            end
 
-function Citizen:SetGonTarget(gonInstance)
-    self:SetPlayerTarget(nil)
-    self.moveToPoint = nil
-    self.moveToGon = gonInstance
-
-    local gonComponent = Gon:FromInstance(gonInstance)
-
-    self.citizensChangedConnection = gonComponent.Building.SharedState:GetChangedSignal("Citizens"):Connect(function(citizens)
-        if #citizens >= gonComponent.Building.SharedState:Get("Capacity") then
-            self.citizensChangedConnection:Disconnect()
-            self.moveToPoint = nil
-            self.moveToGon = nil
-            self.moveToPlayer = nil
-
-            self.SharedState:Set("TargetState", "Random")
+            if self.moveToPoint then
+                self.Instance.Humanoid:MoveTo(self.moveToPoint)
+                if self.Instance:FindFirstChild("HumanoidRootPart") then
+                    if (self.Instance.HumanoidRootPart.Position - self.moveToPoint).Magnitude <= 3 then
+                        --Reached point
+                        self.moveToPoint = nil
+                    end
+                end
+            end
         end
     end)
-
-    self.SharedState:Set("TargetState", "Gon")
 end
 
-function Citizen:ReachedGon()
-    Gon:WaitForInstance(self.moveToGon):andThen(function(gonComponent)
+function Citizen:AssignToGon(gonInstance)
+    Gon:WaitForInstance(gonInstance):andThen(function(gonComponent)
         if gonComponent.Building then
             gonComponent.Building:AddCitizen()
         else
@@ -90,40 +89,11 @@ function Citizen:ReachedGon()
         self.citizensChangedConnection:Disconnect()
     end
 
-    CitizenService.CitizenReachedGon:Fire(self.Instance, self.moveToGon)
-
-    Debris:AddItem(self.Instance, 1)
+    self.Instance:Destroy()
 end
 
-function Citizen:Start()
-    local CitizenMoveZone = workspace.CitizenZone.CitizenMoveZone
-
-    self.heartbeatConnection = game:GetService("RunService").Heartbeat:Connect(function()
-        if not self.moveToPoint and not self.moveToPlayer and not self.moveToGon then
-            self.moveToPoint = Vector3.new(
-                math.random(CitizenMoveZone.Position.X - (CitizenMoveZone.Size.X/2), CitizenMoveZone.Position.X + (CitizenMoveZone.Size.X/2)),
-                0.5,
-                math.random(CitizenMoveZone.Position.Z - (CitizenMoveZone.Size.Z/2), CitizenMoveZone.Position.Z + (CitizenMoveZone.Size.Z/2))
-            )
-        end
-
-        if self.moveToPoint then
-            self.Instance.Humanoid:MoveTo(self.moveToPoint)
-            if (self.Instance.HumanoidRootPart.Position - self.moveToPoint).Magnitude <= 3 then
-                self.SharedState:Set("TargetState", "Random")
-                self.moveToPoint = nil
-            end
-        elseif self.moveToPlayer then
-            if self.moveToPlayer.Character and self.moveToPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                self.Instance.Humanoid:MoveTo(self.moveToPlayer.Character.HumanoidRootPart.Position)
-            end
-        elseif self.moveToGon then
-            self.Instance.Humanoid:MoveTo(self.moveToGon.Position)
-            if (self.Instance.HumanoidRootPart.Position - self.moveToGon.Position).Magnitude <= 2 then
-                self:ReachedGon()
-            end
-        end
-    end)
+function Citizen:StartDrag()
+    self.SharedState:Set("Dragging", true)
 end
 
 return Citizen

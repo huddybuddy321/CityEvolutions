@@ -1,5 +1,6 @@
 local RunService = game:GetService("RunService")
 local ContextActionService = game:GetService("ContextActionService")
+local SoundService = game:GetService("SoundService")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -23,27 +24,35 @@ local Signal = require(Knit.Util.Signal)
 local Input = require(Knit.Util.Input)
 local Mouse = Input.Mouse.new()
 
+local CitizenService
+local GonSelectorController
+
 local CitizenSelectorController = Knit.CreateController {
     Name = "CitizenSelectorController",
     CitizenAssignedToGon = Signal.new(),
 }
 
 function CitizenSelectorController:KnitStart()
-    local CitizenService = Knit.GetService("CitizenService")
+    CitizenService = Knit.GetService("CitizenService")
 
+    GonSelectorController = Knit.GetController("GonSelectorController")
 
-    Knit.GetController("InputController").Clicked:Connect(function()
-        local raycastParams = RaycastParams.new()
+    local raycastParams = RaycastParams.new()
 
-        raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
-        raycastParams.FilterDescendantsInstances = {workspace:WaitForChild("CitizenZone"):WaitForChild("Citizens")}
+    raycastParams.FilterType = Enum.RaycastFilterType.Whitelist
+    raycastParams.FilterDescendantsInstances = {workspace:WaitForChild("CitizenZone"):WaitForChild("Citizens")}
 
+    Knit.GetController("InputController").ClickDown:Connect(function()
         local raycastResult = Mouse:Raycast(raycastParams, 70)
 
         if raycastResult then
             local citizenComponent = Citizen:FromInstance(raycastResult.Instance.Parent)
             if citizenComponent then
                 self.selectedCitizenComponent = citizenComponent
+
+                self:StartDrag(citizenComponent)
+
+                --[[
 
                 local citizenState = RemoteState.GetState(citizenComponent.Instance)
 
@@ -80,13 +89,58 @@ function CitizenSelectorController:KnitStart()
                                     attachment1:Destroy()
                                 end
                             end)
-                            ]]--
                         end
                     end)
                 end
+                ]]--
             end
         end
     end)
+
+    Knit.GetController("InputController").ClickUp:Connect(function()
+        if self.selectedCitizenComponent then
+            self:EndDrag(self.selectedCitizenComponent)
+        end
+    end)
+end
+
+function CitizenSelectorController:StartDrag(citizenComponent)
+    SoundService:PlayLocalSound(SoundService.Interface.Click)
+
+    citizenComponent:StartDrag()
+
+    CitizenService:StartDrag(citizenComponent)
+
+    self.renderSteppedConnection = RunService.RenderStepped:Connect(function()
+        local citizenDragRaycastParams = RaycastParams.new()
+
+        citizenDragRaycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+        citizenDragRaycastParams.FilterDescendantsInstances = {workspace:WaitForChild("CitizenZone"):WaitForChild("Citizens")}
+
+        local citizenDragRaycastResult = Mouse:Raycast(citizenDragRaycastParams, 70)
+
+        if citizenDragRaycastResult and citizenComponent.Instance:FindFirstChild("HumanoidRootPart") then
+            citizenComponent.Instance:FindFirstChild("HumanoidRootPart").CFrame = CFrame.new(citizenDragRaycastResult.Position)
+        end
+    end)
+end
+
+function CitizenSelectorController:EndDrag(citizenComponent)
+    if self.renderSteppedConnection then
+        self.renderSteppedConnection:Disconnect()
+
+        if GonSelectorController.selectedGonInstance then
+            CitizenService:AssignCitizenGon(citizenComponent.Instance, GonSelectorController.selectedGonInstance):andThen(function(citizenAssignedToGon)
+                if citizenAssignedToGon then
+                    SoundService:PlayLocalSound(SoundService.Interface.Click)
+                else
+                    citizenComponent:EndDrag()
+                end
+            end)
+        else
+            citizenComponent:EndDrag()
+        end
+    end
 end
 
 return CitizenSelectorController

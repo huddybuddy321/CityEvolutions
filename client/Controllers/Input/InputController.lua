@@ -20,13 +20,19 @@ local Signal = require(Knit.Util.Signal)
 
 local InputController = Knit.CreateController {
     Name = "InputController",
-    Clicked = Signal.new()
+    Clicked = Signal.new(),
+    ClickDown = Signal.new(),
+    ClickUp = Signal.new()
 }
 
 function InputController:KnitStart()
     ContextActionService:BindAction("Click", function(actionName, inputState)
+        if inputState == Enum.UserInputState.Begin then
+            self.ClickDown:Fire()
+        end
         if inputState == Enum.UserInputState.End then
             self.Clicked:Fire()
+            self.ClickUp:Fire()
         end
     end, false, Enum.UserInputType.MouseButton1, Enum.UserInputType.Touch)
 end

@@ -107,6 +107,7 @@ end
 
 function Gon:Click()
     self.ClickToBuild.Enabled = false
+    --[[
     if CitizenSelectorController.selectedCitizenComponent then
         CitizenService:AssignCitizenGon(CitizenSelectorController.selectedCitizenComponent.Instance, self.Instance):andThen(function(citizenWasAssigned)
             if citizenWasAssigned then
@@ -114,6 +115,7 @@ function Gon:Click()
             end
         end)
     end
+    ]]--
 end
 
 function Gon:SetBuilding(buildingComponent)

@@ -28,6 +28,10 @@ function CitizenService.Client:SelectCitizen(player, citizenInstance)
     return self.Server:SelectCitizen(player, citizenInstance)
 end
 
+function CitizenService.Client:StartDrag(player, citizenInstance)
+    return self.Server:StartDrag(player, citizenInstance)
+end
+
 function CitizenService.Client:AssignCitizenGon(player, citizenInstance, gonInstance)
     return self.Server:AssignCitizenGon(player, citizenInstance, gonInstance)
 end
@@ -43,7 +47,8 @@ function CitizenService:AssignCitizenGon(player, citizenInstance, gonInstance)
         if gonComponent.Building then
             if #gonComponent.Building.SharedState:Get("Citizens") < gonComponent.Building.SharedState:Get("Capacity") then
                 assignedCitizenToGon = true
-                citizenComponent:SetGonTarget(gonInstance)
+                citizenComponent:AssignToGon(gonInstance)
+                --citizenComponent:SetGonTarget(gonInstance)
             end
         end
     end
@@ -61,6 +66,14 @@ function CitizenService:SelectCitizen(player, citizenInstance)
     end
 
     return didSelectCitizen
+end
+
+function CitizenService:StartDrag(player, citizenInstance)
+    local citizenComponent = Citizen:FromInstance(citizenInstance)
+
+    if citizenComponent then
+        citizenComponent:StartDrag()
+    end
 end
 
 function CitizenService:KnitStart()
