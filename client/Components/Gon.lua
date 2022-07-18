@@ -43,6 +43,7 @@ function Gon:Construct()
     end
     self.State = BasicState.new {
         Hovered = false,
+        Selected = false,
         Constructing = false,
         ConstructionTimeLeft = 0,
         ConstructionTime = 0,
@@ -81,7 +82,7 @@ function Gon:Start()
 
             self.BuildingComponent.State:Set("Hovering", isHovered)
 
-            if isHovered then
+            if isHovered or self.State:Get("Selected") == true then
                 self.Instance.Decal.Color3 = Color3.fromRGB(69, 151, 163)
             else
                 self.Instance.Decal.Color3 = Color3.fromRGB(80, 163, 80)
@@ -99,24 +100,35 @@ function Gon:Start()
         end
     end)
 
+    self.State:GetChangedSignal("Constructing"):Connect(function(isConstructing)
+        if isConstructing then
+            self.ClickToBuild.Enabled = false
+        end
+    end)
+
     self.State:GetChangedSignal("ConstructionTimeLeft"):Connect(function(constructionTimeLeft)
         if self.TimeToBuild then
             self.TimeToBuild:WaitForChild("TimeLeft").Text = constructionTimeLeft .. " seconds left"
         end
     end)
+
+    self.State:GetChangedSignal("Selected"):Connect(function(isSelected)
+        if self.State:Get("HasBuildingComponent") then
+            self.BuildingComponent.State:Set("Selected", isSelected)
+            if not isSelected then
+                self.Instance.Decal.Color3 = Color3.fromRGB(80, 163, 80)
+            end
+        end
+    end)
 end
 
-function Gon:Click()
-    self.ClickToBuild.Enabled = false
-    --[[
-    if CitizenSelectorController.selectedCitizenComponent then
-        CitizenService:AssignCitizenGon(CitizenSelectorController.selectedCitizenComponent.Instance, self.Instance):andThen(function(citizenWasAssigned)
-            if citizenWasAssigned then
-                CitizenSelectorController.CitizenAssignedToGon:Fire(CitizenSelectorController.selectedCitizenComponent.Instance)
-            end
-        end)
-    end
-    ]]--
+function Gon:Select()
+    self.State:Set("Selected", true)
+end
+
+function Gon:Unselect()
+    self.State:Set("Selected", false)
+    self.State:Set("Hovered", false)
 end
 
 function Gon:SetBuilding(buildingComponent)

@@ -17,6 +17,8 @@ local Knit = require(KnitPackages.Knit)
 local Component = require(Knit.Util.Component)
 local Signal = require(Knit.Util.Signal)
 
+local BuildingControlController
+
 local Building = Component.new({
     Tag = "Building",
     Ancestors = {workspace},
@@ -24,6 +26,9 @@ local Building = Component.new({
 
 function Building:Construct()
     Knit.OnStart():await()
+    if not BuildingControlController then
+        BuildingControlController = Knit.GetController("BuildingControlController")
+    end
     self.detailsGui = ReplicatedStorage:WaitForChild("BuildingDetails"):Clone()
     self.detailsGui.Enabled = false
     self.detailsGui.Parent = self.Instance
@@ -32,41 +37,39 @@ function Building:Construct()
         Hovering = false,
         Dragging = true,
 
+        Selected = false,
+
         Title = "",
     }
 
     self.GotSharedState, self.SharedState = RemoteState.WaitForState(self.Instance):await()
 
-    self:SetCapacity(self.SharedState:Get("Capacity"))
-    self:UpdateDetails(self.SharedState:Get("Details"))
+    --self:UpdateCitizenCapacity(self.SharedState:Get("Capacity"), #self.SharedState:Get("Citizens"))
+    --self:UpdateDetails(self.SharedState:Get("Details"))
 
     self.State:Set("Owner", self.State.None)
 end
 
 function Building:Start()
-    self.State:GetChangedSignal("Hovering"):Connect(function(show)
-        if show then
+    self.State:GetChangedSignal("Hovering"):Connect(function(isHovered)
+        if isHovered then
             SoundService:PlayLocalSound(SoundService.Interface.BuildingHover)
-            self.detailsGui.Enabled = true
+            --self.detailsGui.Enabled = true
         else
-            self.detailsGui.Enabled = false
+           -- self.detailsGui.Enabled = false
         end
     end)
 
-    self.State:GetChangedSignal("Title"):Connect(function(title)
-        self.detailsGui:WaitForChild("Frame"):WaitForChild("Title").Text = title
-    end)
-
-    self.SharedState:GetChangedSignal("Citizens"):Connect(function(citizens)
-        self.detailsGui:WaitForChild("Frame"):WaitForChild("Details"):WaitForChild("CitizenCapacity").Text = #citizens .. "/" .. self.SharedState:Get("Capacity") .. " spots taken"
-    end)
-
-    self.SharedState:GetChangedSignal("Capacity"):Connect(function(capacity)
-        self:SetCapacity(capacity)
-    end)
-
-    self.SharedState:GetChangedSignal("Details"):Connect(function(details)
-        self:UpdateDetails(details)
+    self.State:GetChangedSignal("Selected"):Connect(function(isSelected, wasSelected)
+        if isSelected then
+            if not wasSelected then
+                BuildingControlController:Open(self)
+            end
+        else
+            if wasSelected then
+                --BuildingControlController:Close()
+            end
+        end
     end)
 
     self.State:Set("Title", self.Instance.Name)
@@ -99,8 +102,9 @@ function Building:UpdateDetails(details)
     end
 end
 
-function Building:SetCapacity(capacity)
-    self.detailsGui:WaitForChild("Frame"):WaitForChild("Details"):WaitForChild("CitizenCapacity").Text = #self.SharedState:Get("Citizens") .. "/" .. capacity .. " spots taken"
+function Building:UpdateCitizenCapacity(capacity, citizenCount)
+    --self.detailsGui:WaitForChild("Frame"):WaitForChild("Details"):WaitForChild("CitizenCapacity").Text = #self.SharedState:Get("Citizens") .. "/" .. capacity .. " spots taken"
+    self.BuildingControl:WaitForChild("CitizenCapacity").Text = citizenCount .. "/" .. capacity .. " spots taken"
 end
 
 function Building:SetHovered(isHovered)

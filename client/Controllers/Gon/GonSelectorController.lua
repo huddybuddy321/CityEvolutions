@@ -44,7 +44,7 @@ function GonSelectorController:KnitStart()
                 --if raycastResult.Instance:FindFirstAncestor("Plots") then
                     for gonIndex, gon in pairs(localPlot.Gons) do
                         if gon == raycastResult.Instance then
-                            foundGon = true
+                            foundGon = raycastResult.Instance
                             if not self.selectedGonInstance then
                                 self.selectedGonInstance = gon
                                 
@@ -56,18 +56,16 @@ function GonSelectorController:KnitStart()
                 --end
             end
 
+            for _, aGonInstance in pairs(localPlot.Gons) do
+                if aGonInstance ~= foundGon then
+                    local aGonComponent = Gon:FromInstance(aGonInstance)
+                    if aGonComponent then
+                        aGonComponent.State:Set("Hovered", false)
+                    end
+                end
+            end
+
             if not foundGon then
-                for _, gonComponent in pairs(Gon:GetAll()) do
-                    gonComponent.State:Set("Hovered", false)
-                end
-
-                --[[
-                 for gonIndex, gon in pairs(localPlot) do
-                    gon.Decal.Transparency = 0.5
-                end
-
-                ]]--
-
                 self.selectedGonInstance = nil
             end
         end)
@@ -76,28 +74,37 @@ function GonSelectorController:KnitStart()
             local raycastResult = Mouse:Raycast(raycastParams, 60)
 
             if raycastResult then
-                --if raycastResult.Instance:FindFirstAncestor("Plots") then
-                    for gonIndex, gon in pairs(localPlot.Gons) do
-                        if gon == raycastResult.Instance then
-                            local gonComponent = Gon:FromInstance(gon)
+                for gonIndex, gon in pairs(localPlot.Gons) do
+                    if gon == raycastResult.Instance then
+                        local gonComponent = Gon:FromInstance(gon)
 
-                            if gonComponent then
-                                gonComponent:Click()
-                            end
+                        if gonComponent then
+                            gonComponent:Select()
+                        end
 
-                            if gonComponent and not gonComponent.State:Get("HasBuildingComponent") then
-                                BuildingService:Build(gonComponent.Instance):andThen(function(willConstruct)
-                                    if not willConstruct then
-                                        SoundService:PlayLocalSound(SoundService.Interface.Error)
-                                        GameMessageController:GameMessage("You're too poor to build...")
-                                    else
-                                        gonComponent.State:Set("Constructing", willConstruct)
-                                    end
-                                end)
+                        if gonComponent and not gonComponent.State:Get("HasBuildingComponent") then
+                            BuildingService:Build(gonComponent.Instance):andThen(function(willConstruct)
+                                if not willConstruct then
+                                    SoundService:PlayLocalSound(SoundService.Interface.Error)
+                                    GameMessageController:GameMessage("You're too poor to build...")
+                                else
+                                    gonComponent.State:Set("Constructing", willConstruct)
+                                end
+                            end)
+                        end
+
+                        for _, aGonInstance in pairs(localPlot.Gons) do
+                            if aGonInstance ~= gon then
+                                local aGonComponent = Gon:FromInstance(aGonInstance)
+                                if aGonComponent then
+                                    aGonComponent.State:Set("Selected", false)
+                                    aGonComponent.State:Set("Hovered", false)
+                                    aGonComponent:Unselect()
+                                end
                             end
                         end
                     end
-                --end
+                end
             end
         end)
     end)

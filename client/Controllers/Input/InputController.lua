@@ -26,6 +26,19 @@ local InputController = Knit.CreateController {
 }
 
 function InputController:KnitStart()
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            self.ClickDown:Fire(gameProcessed)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input, gameProcessed)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            self.Clicked:Fire(gameProcessed)
+            self.ClickUp:Fire(gameProcessed)
+        end
+    end)
+    --[[
     ContextActionService:BindAction("Click", function(actionName, inputState)
         if inputState == Enum.UserInputState.Begin then
             self.ClickDown:Fire()
@@ -35,6 +48,7 @@ function InputController:KnitStart()
             self.ClickUp:Fire()
         end
     end, false, Enum.UserInputType.MouseButton1, Enum.UserInputType.Touch)
+    ]]--
 end
 
 return InputController
